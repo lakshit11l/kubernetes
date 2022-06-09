@@ -17,28 +17,11 @@ pipeline {
       }
     }
 
-    stage('SonarQube - SAST') {
-      steps {
-        withSonarQubeEnv('SonarQube') {
-          sh "mvn sonar:sonar       -Dsonar.projectKey=lakshit   -Dsonar.host.url=http://20.107.217.158:9000 "
-        }
-        timeout(time: 2, unit: 'MINUTES') {
-          script {
-            waitForQualityGate abortPipeline: true
-          }
-        }
-      }
-    }
-   // stage('Vulnerability Scan - Docker ') {
-     // steps {
-     //   sh "mvn dependency-check:check"
-   //   }
-   //   post {
-     //   always {
-       //   dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-  //      }
-    //  }
- //   }
+     stage('Vulnerability Scan - Docker ') {
+        steps {
+          sh "mvn dependency-check:check"
+       }
+     }
      stage('Vulnerability Scan - Docker') {
       steps {
         parallel(
@@ -47,6 +30,9 @@ pipeline {
           },
           "Trivy Scan": {
             sh "bash trivy-docker-image-scan.sh"
+          },
+          "OPA Conftest": {
+            sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
           }
         )
       }
