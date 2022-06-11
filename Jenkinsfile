@@ -1,3 +1,5 @@
+@Library('slack') _
+
 
 pipeline {
   agent any
@@ -35,6 +37,11 @@ pipeline {
             sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
           }
         )
+      }
+    } 
+    stage('Testing Slack') {
+      steps {
+        sh 'exit 0'
       }
     }
 
@@ -76,6 +83,7 @@ pipeline {
       junit 'target/surefire-reports/*.xml'
       jacoco execPattern: 'target/jacoco.exec'
       dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+      sendNotification currentBuild.result
     }
 
     // success {
