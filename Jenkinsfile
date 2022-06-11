@@ -1,8 +1,16 @@
 @Library('slack') _
 
-
 pipeline {
   agent any
+
+  environment {
+    deploymentName = "devsecops"
+    containerName = "devsecops-container"
+    serviceName = "devsecops-svc"
+    imageName = "lakshit45/numeric-app:${GIT_COMMIT}"
+    applicationURL = "http://20.107.217.158" 
+    applicationURI = "/increment/99"
+  }
 
   stages {
 
@@ -19,12 +27,23 @@ pipeline {
       }
     }
 
-     stage('Vulnerability Scan - Docker ') {
-        steps {
-          sh "mvn dependency-check:check"
-       }
-     }
-     stage('Vulnerability Scan - Docker') {
+
+  //  stage('SonarQube - SAST') {
+ //     steps {
+   //     withSonarQubeEnv('SonarQube') {
+     //     sh "mvn sonar:sonar \
+	//	              -Dsonar.projectKey=numeric-application \
+	//	              -Dsonar.host.url=http://devsecops-demo.eastus.cloudapp.azure.com:9000"
+    //    }
+      //  timeout(time: 2, unit: 'MINUTES') {
+        //  script {
+          //  waitForQualityGate abortPipeline: true
+      //    }
+     //   }
+    //  }
+   // }
+
+    stage('Vulnerability Scan - Docker') {
       steps {
         parallel(
           "Dependency Scan": {
@@ -38,23 +57,18 @@ pipeline {
           }
         )
       }
-    } 
-    stage('Testing Slack') {
-      steps {
-        sh 'exit 1'
-      }
     }
-
 
     stage('Docker Build and Push') {
       steps {
         withDockerRegistry([credentialsId: "dockerhub", url: ""]) {
           sh 'printenv'
-          sh ' sudo docker build -t lakshit45/numeric-app:""$GIT_COMMIT"" .'
-          sh '  docker push lakshit45/numeric-app:""$GIT_COMMIT""'
+          sh 'sudo docker build -t lakshit45/numeric-app:""$GIT_COMMIT"" .'
+          sh 'docker push lakshit45/numeric-app:""$GIT_COMMIT""'
         }
       }
     }
+
     stage('Vulnerability Scan - Kubernetes') {
       steps {
         parallel(
@@ -68,21 +82,53 @@ pipeline {
       }
     }
 
-    stage('Kubernetes Deployment - DEV') {
+   
+    
+    
+
+    stage('Prompte to PROD?') {
       steps {
-        withKubeConfig([credentialsId: 'kubeconfig']) {
-          sh "sed -i 's#replace#lakshit45/numeric-app:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
-          sh "kubectl apply -f k8s_deployment_service.yaml"
+        timeout(time: 2, unit: 'DAYS') {
+          input 'Do you want to Approve the Deployment to Production Environment/Namespace?'
         }
       }
     }
+
     
+
+    stage('K8S Deployment - PROD') {
+      steps {
+        parallel(
+          "Deployment": {
+            withKubeConfig([credentialsId: 'kubeconfig']) {
+              sh "sed -i 's#replace#${imageName}#g' k8s_PROD-deployment_service.yaml"
+              sh "kubectl -n prod apply -f k8s_PROD-deployment_service.yaml"
+            }
+          },
+          "Rollout Status": {
+            withKubeConfig([credentialsId: 'kubeconfig']) {
+              sh "bash k8s-PROD-deployment-rollout-status.sh"
+            }
+          }
+        )
+      }
+    }
+
+    // stage('Testing Slack') {
+    //    steps {
+    //        sh 'exit 1'
+    //    }
+    //  }
+
   }
-   post {
+
+  post {
     always {
       junit 'target/surefire-reports/*.xml'
       jacoco execPattern: 'target/jacoco.exec'
       dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+     
+      //Use sendNotifications.groovy from shared library and provide current build result as parameter 
       sendNotification currentBuild.result
     }
 
@@ -92,7 +138,7 @@ pipeline {
 
     // failure {
 
-    //;; }
+    // }
   }
 
 }
