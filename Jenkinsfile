@@ -20,7 +20,7 @@ pipeline {
         withDockerRegistry([credentialsId: "dockerhub", url: ""]) {
           sh 'printenv'
           sh 'sudo docker build -t lakshit45/fchgrcrgb:""$GIT_COMMIT"" .'
-          sh 'sudo docker push lakshit45/fchgrcrgb:""$GIT_COMMIT""'
+          sh ' docker push lakshit45/fchgrcrgb:""$GIT_COMMIT""'
          }
        }
     }
