@@ -2,7 +2,6 @@ pipeline {
   agent any
 
   stages {
-?
         
     stage('Vulnerability Scan - Kubernetes') {
       steps {
