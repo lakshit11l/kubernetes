@@ -15,6 +15,16 @@ pipeline {
       }
     } 
  }
+    stage('Docker Build and Push') {
+      steps {
+        withDockerRegistry([credentialsId: "dockerhub", url: ""]) {
+          sh 'printenv'
+          sh 'docker build -t lakshit45/fchgrcrgb:""$GIT_COMMIT"" .'
+          sh 'docker push lakshit45/fchgrcrgb:""$GIT_COMMIT""'
+         }
+       }
+    }
+  }
      
   
   post {
