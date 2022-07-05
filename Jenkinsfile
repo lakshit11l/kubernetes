@@ -32,6 +32,11 @@ pipeline {
         }
       }
     }
+    stage('SonarQube - SAST') {
+      steps {
+        sh "mvn sonar:sonar -Dsonar.projectKey=lakshit  -Dsonar.host.url=http://20.239.91.109:9000  -Dsonar.login=d0e3f78cf5f528d075a637754115442c8862224e"
+      }
+    }
   }
      
   
