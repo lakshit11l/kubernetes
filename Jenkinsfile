@@ -37,6 +37,12 @@ pipeline {
         sh "mvn sonar:sonar -Dsonar.projectKey=lakshit  -Dsonar.host.url=http://20.239.91.109:9000  -Dsonar.login=d0e3f78cf5f528d075a637754115442c8862224e"
       }
     }
+        
+    stage('Vulnerability Scan - Docker ') {
+      steps {
+        sh "mvn dependency-check:check"
+      }
+    }
   }
      
   
@@ -44,6 +50,7 @@ pipeline {
      always {
           junit 'target/surefire-reports/*.xml'
           jacoco execPattern: 'target/jacoco.exec'
+          dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
         }
       }
     }
