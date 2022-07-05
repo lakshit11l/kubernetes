@@ -14,6 +14,7 @@ pipeline {
         sh "mvn test"
       }
     } 
+ }
      
   
   post {
@@ -23,6 +24,6 @@ pipeline {
         }
       }
     }
-}
+
 
 // 
